@@ -19,7 +19,6 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
-
 /**
  * Created by LIA on 02-Apr-16.
  */
@@ -55,7 +54,6 @@ public class HubungiActivity extends Activity {
             if(gps.canGetLocation()){
             final Location location = gps.getLocation();
 
-                Toast.makeText(getApplicationContext(), "Mencari kantor " + optionType, Toast.LENGTH_SHORT).show();
             PlacesFetcher place = new PlacesFetcher();
             place.execute(location);
 
@@ -69,17 +67,23 @@ public class HubungiActivity extends Activity {
 
         @Override
         protected String []doInBackground(Location... params) {
-            Log.d("test", "doInBg is running");
-            StringBuffer bufferPlaces = null;
+
             Location location = params[0];
+
             double lat = location.getLatitude();
             double lng = location.getLongitude();
 
             String apiKey = "AIzaSyCzuw8pBhNhb6nFdru4ULxTRAzFTJknbiE";
+            int radius = 1000;
 
-            int radius = 3000;
 
-            //return null;
+            String [] tempResult = searchPlaces(radius, apiKey, lat, lng);
+
+            return tempResult;
+        }
+
+        private String[] searchPlaces(int radius, String apiKey, double lat, double lng){
+            StringBuffer bufferPlaces = null;
             String urlSearchPlaces ="https://maps.googleapis.com/maps/api/place/nearbysearch/json?" +
                     "location="+lat+","+lng+"&radius="+radius+"&types="+optionType+"&key="+apiKey;
 
@@ -122,10 +126,10 @@ public class HubungiActivity extends Activity {
                 tempResult = new String[arrayPlace.length()];
 
                 if(status!="OK"){
-
                     String returnError =objectPlace.getString("status");
-                    //return returnError;
                 }
+
+                int placeCount=0;
 
                 Log.d("test", "entering fetching data");
                 for(int i=0; i<arrayPlace.length(); i++){
@@ -133,22 +137,38 @@ public class HubungiActivity extends Activity {
                     String placeName = place.getString("name");
                     String placeId = place.getString("place_id");
 
-                    Log.d("test", "calling the details function");
                     String placeDetails = getPlaceDetails(placeId, i);
+                    if(placeDetails!=""){
+                        tempResult[i] = placeName+"\n"+placeDetails;
+                        placeCount++;
+                        Log.d("test", "placeName:"+placeName);
+                    }else{
+                        tempResult[i] = "";
+                    }
 
-                    tempResult[i] = (i+1)+". "+placeName+"\n"+placeDetails;
-                    Log.d("test", "hasil:"+tempResult[i]);
                 }
 
+                if(placeCount==0){
+
+                    Log.d("test", "EMPTY RESULT");
+                    radius = radius+500;
+
+                    if(radius<=40000){
+                        return searchPlaces(radius, apiKey, lat, lng);
+                    }else{
+                        tempResult[0]="Maaf, tidak ada tempat terdekat dengan Anda dalam radius 40 km.";
+                        return tempResult;
+                    }
+
+                }
 
             } catch (JSONException e) {
                 Log.d("test", "Error: "+e.toString());
                 e.printStackTrace();
             }
-
-
-            return  tempResult;
+            return tempResult;
         }
+
 
         private String getPlaceDetails (String placeId, int param){
             int i = param;
@@ -186,7 +206,23 @@ public class HubungiActivity extends Activity {
                 String address = (String) objectResult.get("formatted_address");
                 String phone = (String) objectResult.get("international_phone_number");
 
-                finalResult.append(address + " " + phone);
+
+                JSONObject geometry = (JSONObject) objectResult.get("geometry");
+                JSONObject objectLocation = (JSONObject) geometry.get("location");
+                Double placeLat = (Double) objectLocation.get("lat");
+                Double placeLng = (Double) objectLocation.get("lng");
+
+                if(phone.isEmpty()){
+
+                    finalResult.append("");
+                    //finalResult.append(address + " " + phone + "\n" + placeLat + "," + placeLng);
+
+                }else{
+
+                    Log.d("test", "EXISTS PHONE");
+                    finalResult.append(address + " " + phone + "\n" + placeLat + "," + placeLng);
+                }
+
             } catch (JSONException e) {
                 e.printStackTrace();
             }
