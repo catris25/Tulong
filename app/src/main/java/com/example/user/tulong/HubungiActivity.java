@@ -159,6 +159,7 @@ public class HubungiActivity extends Activity {
 
                     Log.d("test", "EMPTY RESULT");
                     radius = radius+500;
+                    Log.d("test", "RADIUS :"+radius);
 
                     if(radius<=40000){
                         return searchPlaces(radius, apiKey, lat, lng);
