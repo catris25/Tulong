@@ -5,6 +5,8 @@ import android.location.Location;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.ArrayAdapter;
+import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -19,6 +21,8 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Arrays;
+
 /**
  * Created by LIA on 02-Apr-16.
  */
@@ -27,6 +31,8 @@ public class HubungiActivity extends Activity {
     String optionType;
     TextView textResult;
     TextView textPlaceResult;
+    ListView lvHasil;
+    ArrayAdapter<String> adapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,6 +45,7 @@ public class HubungiActivity extends Activity {
         textPlaceResult = (TextView) findViewById(R.id.textPlaceResult);
         activityTitle = (TextView) findViewById(R.id.textView);
         activityTitle.setText("Hey");
+        lvHasil = (ListView) findViewById(R.id.listView);
 
         Bundle bundle = getIntent().getExtras();
 
@@ -156,7 +163,7 @@ public class HubungiActivity extends Activity {
                     if(radius<=40000){
                         return searchPlaces(radius, apiKey, lat, lng);
                     }else{
-                        tempResult[0]="Maaf, tidak ada tempat terdekat dengan Anda dalam radius 40 km.";
+                        tempResult[0]="Maaf, tidak ada lagi tempat terdekat dengan Anda dalam radius 40 km.";
                         return tempResult;
                     }
 
@@ -206,21 +213,18 @@ public class HubungiActivity extends Activity {
                 String address = (String) objectResult.get("formatted_address");
                 String phone = (String) objectResult.get("international_phone_number");
 
-
-                JSONObject geometry = (JSONObject) objectResult.get("geometry");
-                JSONObject objectLocation = (JSONObject) geometry.get("location");
-                Double placeLat = (Double) objectLocation.get("lat");
-                Double placeLng = (Double) objectLocation.get("lng");
+//                JSONObject geometry = (JSONObject) objectResult.get("geometry");
+//                JSONObject objectLocation = (JSONObject) geometry.get("location");
+//                Double placeLat = (Double) objectLocation.get("lat");
+//                Double placeLng = (Double) objectLocation.get("lng");
 
                 if(phone.isEmpty()){
-
                     finalResult.append("");
-                    //finalResult.append(address + " " + phone + "\n" + placeLat + "," + placeLng);
 
                 }else{
 
                     Log.d("test", "EXISTS PHONE");
-                    finalResult.append(address + " " + phone + "\n" + placeLat + "," + placeLng);
+                    finalResult.append(phone);
                 }
 
             } catch (JSONException e) {
@@ -236,12 +240,29 @@ public class HubungiActivity extends Activity {
         protected void onPostExecute(String []s) {
             super.onPostExecute(s);
             textResult.setText("Selesai... Data sudah diambil.");
-            for(int i=0; i<s.length;i++){
-                textPlaceResult.append(s[i]);
-            }
 
-            //textPlaceResult.setText("where is the result?");
-            Log.d("test", "It's done now!");
+            int r, w;
+            final int n = r = w = s.length;
+            while (r > 0) {
+                final String newArray = s[--r];
+                if (!newArray.equals("")) {
+                    s[--w] = newArray;
+                }
+            }
+//
+//
+//            for(int i=0; i<s.length;i++){
+//                //textPlaceResult.append(s[i]+"\n");
+//                if(s[i]==""){
+//
+//                    Log.d("test", (i+1)+"KOSONG");
+//                }
+//            }
+
+            adapter = new ArrayAdapter<String>(HubungiActivity.this, android.R.layout.simple_list_item_1, Arrays.copyOfRange(s, w, n));
+            lvHasil.setAdapter(adapter);
+
+            Log.d("test", "DONE!");
         }
     }
 }
